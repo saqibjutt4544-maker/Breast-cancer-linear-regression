@@ -154,3 +154,43 @@ for radius, area in zip(example_radii.flatten(), predicted_areas):
 print("\nModel interpretation:")
 print(f"- For each 1 unit increase in radius_mean, area_mean increases by {model.coef_[0]:.2f} units")
 print(f"- The R-squared of {r2:.4f} indicates that {r2*100:.2f}% of the variance in area_mean can be explained by radius_mean")
+# Polynomial regression comparison (radius_mean -> area_mean)
+# Since area scales with radius^2, a degree-2 polynomial should fit better
+# than the simple linear model above.
+print("\n" + "="*50)
+print("POLYNOMIAL REGRESSION COMPARISON")
+print("="*50)
+
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+
+poly_model = make_pipeline(PolynomialFeatures(degree=2), LinearRegression())
+poly_model.fit(X_train, y_train)
+y_pred_poly = poly_model.predict(X_test)
+
+mse_poly = mean_squared_error(y_test, y_pred_poly)
+r2_poly = r2_score(y_test, y_pred_poly)
+
+print(f"Linear Model      -> MSE: {mse:.2f}, R-squared: {r2:.4f}")
+print(f"Polynomial (deg=2) -> MSE: {mse_poly:.2f}, R-squared: {r2_poly:.4f}")
+
+improvement = ((r2_poly - r2) / r2) * 100
+print(f"\nR-squared improvement with polynomial model: {improvement:.2f}%")
+
+# Visualization: linear vs polynomial fit
+plt.figure(figsize=(8, 5))
+sort_idx = X_test[:, 0].argsort()
+X_test_sorted = X_test[sort_idx]
+
+plt.scatter(X_test, y_test, color='green', alpha=0.5, label='Actual Test Data')
+plt.plot(X_test_sorted, model.predict(X_test_sorted), color='red',
+         linewidth=2, label=f'Linear (R2={r2:.3f})')
+plt.plot(X_test_sorted, poly_model.predict(X_test_sorted), color='purple',
+         linewidth=2, label=f'Polynomial deg=2 (R2={r2_poly:.3f})')
+plt.xlabel('Radius Mean')
+plt.ylabel('Area Mean')
+plt.title('Linear vs Polynomial Regression: Radius vs Area')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
